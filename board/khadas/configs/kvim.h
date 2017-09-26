@@ -44,6 +44,7 @@
 /* configs for CEC */
 #define CONFIG_CEC_OSD_NAME		"KVim"
 
+#define CONFIG_CMD_CFGLOAD
 #define CONFIG_INSTABOOT
 /* configs for dtb in boot.img */
 //#define DTB_BIND_KERNEL
@@ -87,6 +88,15 @@
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
         "firstboot=0\0"\
+        "start_autoscript="\
+            "if usb start; then run start_usb_autoscript; if mmcinfo; then run start_mmc_autoscript;fi;fi;"\
+            "\0"\
+        "start_mmc_autoscript="\
+            "if fatload mmc 0 1020000 s905_autoscript; then autoscr 1020000; fi"\
+            "\0"\
+        "start_usb_autoscript="\
+            "if fatload usb 0 1020000 s905_autoscript; then autoscr 1020000; fi"\
+            "\0"\
         "upgrade_step=0\0"\
         "jtag=disable\0"\
         "loadaddr=1080000\0"\
@@ -247,6 +257,9 @@
                 "echo Product checking: fail!; sleep 5; reboot;"\
             "fi;fi;"\
             "\0"\
+        "boot_ini_check="\
+             "cfgload;"\
+              "\0"\
 
 #define CONFIG_PREBOOT  \
             "run bcb_cmd; "\
@@ -256,9 +269,9 @@
             "run storeargs;"\
             "run combine_key;" \
             "run upgrade_key;" \
-            "run vim_check;" \
-            "run switch_bootmode;"
-#define CONFIG_BOOTCOMMAND "run storeboot"
+            "run switch_bootmode;"\
+            "run boot_ini_check;"
+#define CONFIG_BOOTCOMMAND "run start_autoscript; run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
@@ -432,7 +445,7 @@
 	#define CONFIG_CMD_DHCP 1
 	#define CONFIG_CMD_RARP 1
 	#define CONFIG_HOSTNAME        KVim
-	#define CONFIG_RANDOM_ETHADDR  1				   /* use random eth addr, or default */
+	#define CONFIG_RANDOM_ETHADDR  1		   /* use random eth addr, or default */
 	#define CONFIG_ETHADDR         00:15:18:01:81:31   /* Ethernet address */
 	#define CONFIG_IPADDR          10.18.9.97          /* Our ip address */
 	#define CONFIG_GATEWAYIP       10.18.9.1           /* Our getway ip address */
