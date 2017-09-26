@@ -20,7 +20,7 @@
 
 #include <common.h>
 #include <asm/arch/io.h>
-
+#include <asm/arch/secure_apb.h>
 #include <amlogic/vmode.h>
 #include <amlogic/vout.h>
 #ifdef CONFIG_AML_LCD
@@ -36,12 +36,8 @@
 			vout_log("%s:%d\n", __func__, __LINE__); \
 	} while (0)
 
-
-#define REG_BASE_VCBUS                  (0xd0100000L)
-#define VPP_POSTBLEND_H_SIZE 0x1d21
 #define REG_OFFSET_VCBUS(reg)           ((reg << 2))
 #define REG_ADDR_VCBUS(reg)             (REG_BASE_VCBUS + REG_OFFSET_VCBUS(reg))
-
 
 static int g_vmode = -1;
 
@@ -95,6 +91,12 @@ static const vout_set_t vout_sets[] = {
 		.mode              = VMODE_720P,
 		.width             = 1280,
 		.height            = 720,
+	},
+	{ /* VMODE_768P */
+		.name              = "768p",
+		.mode              = VMODE_768P,
+		.width             = 1366,
+		.height            = 768,
 	},
 	{ /* VMODE_1080I */
 		.name              = "1080i",
@@ -161,6 +163,138 @@ static const vout_set_t vout_sets[] = {
 		.mode              = VMODE_LCD,
 		.width             = 1280,
 		.height            = 720,
+	},
+	{ /* VMODE_640x480p60hz */
+		.name              = "640x480p60hz",
+		.mode              = VMODE_640x480p60hz,
+		.width             = 640,
+		.height            = 480,
+	},
+	{ /* VMODE_800x480p60hz */
+		.name              = "800x480p60hz",
+		.mode              = VMODE_800x480p60hz,
+		.width             = 800,
+		.height            = 480,
+	},
+	{ /* VMODE_800x600p60hz */
+		.name              = "800x600p60hz",
+		.mode              = VMODE_800x600p60hz,
+		.width             = 800,
+		.height            = 600,
+	},
+	{ /* VMODE_852x480p60hz */
+		.name              = "852x480p60hz",
+		.mode              = VMODE_852x480p60hz,
+		.width             = 852,
+		.height            = 480,
+	},
+	{ /* VMODE_854x480p60hz */
+		.name              = "854x480p60hz",
+		.mode              = VMODE_854x480p60hz,
+		.width             = 854,
+		.height            = 480,
+	},
+	{ /* VMODE_1024x768p60hz */
+		.name              = "1024x768p60hz",
+		.mode              = VMODE_1024x768p60hz,
+		.width             = 1024,
+		.height            = 768,
+	},
+	{ /* VMODE_1152x864p75hz */
+		.name              = "1152x864p75hz",
+		.mode              = VMODE_1152x864p75hz,
+		.width             = 1152,
+		.height            = 864,
+	},
+	{ /* VMODE_1280x600p60hz */
+		.name              = "1280x600p60hz",
+		.mode              = VMODE_1280x600p60hz,
+		.width             = 1280,
+		.height            = 600,
+	},
+	{ /* VMODE_1280x768p60hz */
+		.name              = "1280x768p60hz",
+		.mode              = VMODE_1280x768p60hz,
+		.width             = 1280,
+		.height            = 768,
+	},
+	{ /* VMODE_1280x800p60hz */
+		.name              = "1280x800p60hz",
+		.mode              = VMODE_1280x800p60hz,
+		.width             = 1280,
+		.height            = 800,
+	},
+	{ /* VMODE_1280x960p60hz */
+		.name              = "1280x960p60hz",
+		.mode              = VMODE_1280x960p60hz,
+		.width             = 1280,
+		.height            = 960,
+	},
+	{ /* VMODE_1280x1024p60hz */
+		.name              = "1280x1024p60hz",
+		.mode              = VMODE_1280x1024p60hz,
+		.width             = 1280,
+		.height            = 1024,
+	},
+	{ /* VMODE_1360x768p60hz */
+		.name              = "1360x768p60hz",
+		.mode              = VMODE_1360x768p60hz,
+		.width             = 1360,
+		.height            = 768,
+	},
+	{ /* VMODE_1366x768p60hz */
+		.name              = "1366x768p60hz",
+		.mode              = VMODE_1366x768p60hz,
+		.width             = 1366,
+		.height            = 768,
+	},
+	{ /* VMODE_1400x1050p60hz */
+		.name              = "1400x1050p60hz",
+		.mode              = VMODE_1400x1050p60hz,
+		.width             = 1400,
+		.height            = 1050,
+	},
+	{ /* VMODE_1440x900p60hz */
+		.name              = "1440x900p60hz",
+		.mode              = VMODE_1440x900p60hz,
+		.width             = 1440,
+		.height            = 900,
+	},
+	{ /* VMODE_1600x900p60hz */
+		.name              = "1600x900p60hz",
+		.mode              = VMODE_1600x900p60hz,
+		.width             = 1600,
+		.height            = 900,
+	},
+	{ /* VMODE_1600x1200p60hz */
+		.name              = "1600x1200p60hz",
+		.mode              = VMODE_1600x1200p60hz,
+		.width             = 1600,
+		.height            = 1200,
+	},
+	{ /* VMODE_1680x1050p60hz */
+		.name              = "1680x1050p60hz",
+		.mode              = VMODE_1680x1050p60hz,
+		.width             = 1680,
+		.height            = 1050,
+	},
+	{ /* VMODE_1920x1200p60hz */
+		.name              = "1920x1200p60hz",
+		.mode              = VMODE_1920x1200p60hz,
+		.width             = 1920,
+		.height            = 1200,
+	},
+	{ /* VMODE_2160x1200p90hz */
+		.name			= "1920x1200p90hz",
+		.mode	 		= VMODE_2160x1200p90hz,
+		.width	 		= 2160,
+		.height 		= 1200,
+	},
+	{ /* VMODE_2560x1080p60hz */
+		.name              = "2560x1080p60hz",
+		.mode              = VMODE_2560x1080p60hz,
+		.width             = 2560,
+		.height            = 1080,
 	},
 };
 
@@ -339,6 +473,11 @@ static int get_window_axis(int *axis)
 		axis[1] = getenv_int("720p_y", 0);
 		axis[2] = getenv_int("720p_w", 1280);
 		axis[3] = getenv_int("720p_h", 720);
+	} else if (strncmp(mode, "768p", 4) == 0) {
+		axis[0] = getenv_int("768p_x", 0);
+		axis[1] = getenv_int("768p_y", 0);
+		axis[2] = getenv_int("768p_w", 1366);
+		axis[3] = getenv_int("768p_h", 768);
 	} else if (strncmp(mode, "1080i", 5) == 0) {
 		axis[0] = getenv_int("1080i_x", 0);
 		axis[1] = getenv_int("1080i_y", 0);

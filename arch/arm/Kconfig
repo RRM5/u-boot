@@ -740,6 +740,18 @@ config TARGET_MESON_GXTV
 	bool "Support meson gxtv-series 64bit"
 	select ARM64
 
+config TARGET_MESON_TXL
+	bool "Support meson txl-series 64bit"
+	select ARM64
+
+config TARGET_MESON_TXLX
+	bool "Support meson txlx-series 64bit"
+	select ARM64
+
+config TARGET_MESON_AXG
+	bool "Support meson axg-series 64bit"
+	select ARM64
+
 config TARGET_LS1021AQDS
 	bool "Support ls1021aqds"
 	select CPU_V7
@@ -934,6 +946,8 @@ source "board/icpdas/lp8x4x/Kconfig"
 source "board/imx31_phycore/Kconfig"
 source "board/isee/igep0033/Kconfig"
 source "board/jornada/Kconfig"
+source "board/karo/tx25/Kconfig"
+source "board/kosagi/novena/Kconfig"
 source "board/logicpd/imx27lite/Kconfig"
 source "board/logicpd/imx31_litekit/Kconfig"
 source "board/maxbcm/Kconfig"
@@ -991,8 +1005,8 @@ source "board/xaeniax/Kconfig"
 source "board/zipitz2/Kconfig"
 
 source "board/amlogic/Kconfig"
-source "customer/board/Kconfig"
 source "board/khadas/Kconfig"
+source "customer/board/Kconfig"
 
 source "arch/arm/Kconfig.debug"
 

@@ -34,7 +34,7 @@ int temp_base = 27;
 uint32_t vref_en = 0;
 uint32_t trim = 0;
 int saradc_vref = -1;
-
+#define MANUAL_POWER 1  //not use vref, use 1.8V power
 
 static int get_tsc(int temp)
 {
@@ -68,6 +68,12 @@ static int get_tsc(int temp)
 		printf("vmeasure=%d\n", vmeasure);
 		TS_C = 16-((vmeasure)/40);
 		break;
+	case MESON_CPU_MAJOR_ID_TXLX:
+		/*TS_C = 16-(adc-1750)/42*/
+		vmeasure = temp-(1750+(temp_base-27)*17);
+		printf("vmeasure=%d\n", vmeasure);
+		TS_C = 16-((vmeasure)/42);
+		break;
 	default:
 		printf("cpu family id not support!!!\n");
 		return -1;
@@ -83,9 +89,6 @@ static int get_tsc(int temp)
 
 static int adc_init_chan6(void)
 {
-	/*adc reg3 bit28: config adc registers flag*/
-	if (readl(SAR_ADC_REG3)&(0x1<<28))
-		return 0;
 	switch (get_cpu_id().family_id) {
 	case MESON_CPU_MAJOR_ID_GXBB:
 	case MESON_CPU_MAJOR_ID_GXTVBB:
@@ -115,6 +118,7 @@ static int adc_init_chan6(void)
 		writel(0x00000114, SAR_CLK_CNTL);/*Clock*/
 		break;
 	case MESON_CPU_MAJOR_ID_TXL:
+	case MESON_CPU_MAJOR_ID_TXLX:
 		writel(0x00000006, SAR_ADC_CHAN_LIST);/*channel 6*/
 		writel(0x00003000, SAR_ADC_AVG_CNTL);
 		writel(0xc8a8500a, SAR_ADC_REG3);/*bit27:1 disable*/
@@ -125,6 +129,9 @@ static int adc_init_chan6(void)
 		writel(0x0c00c400, SAR_ADC_DELTA_10);
 		writel(0x00000110, SAR_CLK_CNTL);/*Clock*/
 		writel(0x002c2060, SAR_ADC_REG11);/*bit20 disabled*/
+#ifdef MANUAL_POWER
+		writel(readl(SAR_ADC_REG11)|0x1, SAR_ADC_REG11);/*bit20 disabled*/
+#endif
 		break;
 	default:
 		printf("cpu family id not support!!!\n");
@@ -177,7 +184,7 @@ static int get_adc_sample(int chan)
 				|(((readl(AO_SEC_SD_CFG12)>>19) & 0x1f)<<9), /*SAR_ADC_REG13[13:9]*/
 				SAR_ADC_REG13);
 			vref_en = 1;
-		} else if ((get_cpu_id().family_id == MESON_CPU_MAJOR_ID_TXL)&&
+		} else if ((get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_TXL)&&
 			((trim == 1)||
 			((((readl(SEC_AO_SEC_SD_CFG12))>>24)&0xff)==0xc0))) {
 			writel(((readl(SAR_ADC_REG13))&(~(0x3f<<8))) /*SAR_ADC_REG13[13:8]:0*/
@@ -395,6 +402,10 @@ static int do_write_trim(cmd_tbl_t *cmdtp, int flag1,
 		temp = temp - 15.5*(temp_base - 27);
 		temp = temp>>2;/*efuse only 10bit adc*/
 		break;
+	case MESON_CPU_MAJOR_ID_TXLX:
+		temp = temp - 17*(temp_base - 27);
+		temp = temp>>2;/*efuse only 10bit adc*/
+		break;
 	default:
 		printf("cpu family id not support!!!\n");
 		goto err;
@@ -452,6 +463,9 @@ static int do_read_temp(cmd_tbl_t *cmdtp, int flag1,
 				break;
 			case MESON_CPU_MAJOR_ID_TXL:
 				tempa = (10*(adc-temp))/155+27;
+				break;
+			case MESON_CPU_MAJOR_ID_TXLX:
+				tempa = (adc-temp)/17+27;
 				break;
 			}
 			printf("tempa=%d\n", tempa);

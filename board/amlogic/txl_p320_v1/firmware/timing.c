@@ -96,8 +96,8 @@
 
 #define CFG_DDR4_DRV  DDR4_DRV_48OHM//DDR4_DRV_48OHM //ddr4 driver use this one
 #define CFG_DDR4_ODT DDR4_ODT_60OHM// DDR4_ODT_80OHM //ddr4 driver use this one
-#define CONFIG_SOC_VREF      0// (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
-#define CONFIG_DRAM_VREF   0// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
+#define CONFIG_SOC_VREF  1+ (50+((50*48)/(48+480/(2+1))))  //0//50+50*drv/(drv+odt)  (738/12) //0 //0  is auto --70 ---range 44.07---88.04   %
+#define CONFIG_DRAM_VREF   0//(50+((50*37)/(37+60)))//0// (810/12) // 0 //77 //0 //0  is auto ---70 --range -- 45---92.50    %
 //#define CONFIG_ZQ_VREF   715/15//  60//0 //(50) % //tune ddr4 ,ddr3 use 0
 #define CONFIG_ZQ_VREF   51//60 //700/12//  60//0 //(50) % //tune ddr4 ,ddr3 use 0
 /*
@@ -471,7 +471,7 @@ ddr_set_t __ddr_setting = {
 	.t_pub_dcr				= 0XB,     //PUB DCR
 	.t_pub_dtcr0			= 0x80003187,    //PUB DTCR //S905 use 0x800031c7
 	.t_pub_dtcr1			= 0x00010237,    //PUB DTCR
-	.t_pub_dsgcr			= 0x020641b,
+	.t_pub_dsgcr			= 0x020641b | (1<<22),
 #elif (CONFIG_DDR_TYPE == CONFIG_DDR_TYPE_DDR4)
 	.t_pub_dcr				= 0X40C,     //PUB DCR
 	.t_pub_dtcr0			= 0x800031c7,    //PUB DTCR //S905 use 0x800031c7
@@ -499,9 +499,9 @@ ddr_set_t __ddr_setting = {
 	//.t_pub_zq2pr			= 0x3f95d,   //PUB ZQ2PR//0x3f95d, 0x4f95d,
 	.t_pub_zq3pr			= 0x1dd1d,   //PUB ZQ3PR
 
-	.t_pub_zq0pr			= 0x0000bf59,   //PUB ZQ0PR, 0x5aa59,0x59959,  0x58859,  //99drriver s912 ddr4 maybe 950m is bad
-	.t_pub_zq1pr			= 0x0002fc5d,   //PUB ZQ1PR//0x3f95d, 0x4f95d,
-	.t_pub_zq2pr			= 0x0002fc5d,   //PUB ZQ2PR//0x3f95d, 0x4f95d,
+	.t_pub_zq0pr			= 0x0000bf59,   //PUB ZQ0PR, 0x5aa59,0x59959,  0x0000bf59,  //99drriver s912 ddr4 maybe 950m is bad
+	.t_pub_zq1pr			= 0x0002fc5d,   //PUB ZQ1PR//0x0002fc5d//0x3f95d, 0x4f95d,
+	.t_pub_zq2pr			= 0x0002fc5d,   //PUB ZQ2PR//0x0002fc5d//0x3f95d, 0x4f95d,
 	//.t_pub_zq3pr			= 0xf5f95d,   //PUB ZQ3PR
 
 	/* pctl0 defines */
@@ -538,9 +538,9 @@ ddr_set_t __ddr_setting = {
 	.t_pctl0_dfiodtcfg1		= (0x0 | (0x6 << 16)),
 
 	.t_pctl0_dfilpcfg0		= ( 1 | (3 << 4) | (1 << 8) | (13 << 12) | (7 <<16) | (1 <<24) | ( 3 << 28)),
-	.t_pub_acbdlr0			= 0x3f,
-	.t_pub_aclcdlr			= 0x28,//0x18,   ///1t  ,if 2t can add some value
-	.t_pub_acbdlr3			= 0x0,//0xa,  //cs
+	.t_pub_acbdlr0			= 0x28,
+	.t_pub_aclcdlr			= 0x38,//0x18,   ///1t  ,if 2t can add some value
+	.t_pub_acbdlr3			= 0x10,//0xa,  //cs
 	//.t_pub_acbdlr0		= 0x0,
 	//.t_pub_aclcdlr		= 0x10,//0x18,   ///1t  ,if 2t can add some value
 	//.t_pub_acbdlr3		= 0x14,//0xa,  //cs
@@ -562,9 +562,9 @@ ddr_set_t __ddr_setting = {
 							[0] = 100,
 							[1] = 100,
 							[2] = 100,
-							[3] = 100,
-							[4] = 100,
-							[5] = 100,},
+							[3] = 94,
+							[4] = 95,
+							[5] = 95,},
 };
 
 pll_set_t __pll_setting = {
@@ -576,4 +576,12 @@ pll_set_t __pll_setting = {
 	.ddr_clk_debug			= CONFIG_DDR_CLK_DEBUG,
 	.cpu_clk_debug			= CONFIG_CPU_CLK_DEBUG,
 #endif
+	.ddr_pll_set			= {
+		/* ddr pll ssc config:
+			ppm1000: 0x00120000
+			ppm2000: 0x00140000
+			ppm3000: 0x00160000
+		*/
+		[0] = 0x00120000,
+	},
 };
