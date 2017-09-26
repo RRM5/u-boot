@@ -60,6 +60,7 @@
 
 /* support ext4*/
 #define CONFIG_CMD_EXT4 1
+#define CONFIG_CMD_EXT2 1
 
 /* Bootloader Control Block function
    That is used for recovery and the bootloader to talk to each other
@@ -128,6 +129,12 @@
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
+        "initargs_ubuntu="\
+            "root=/dev/rootfs rootflags=data=writeback rw logo=osd1,loaded,0x3d800000,1080p60hz vout=1080p60hz,enable hdmimode=1080p60hz console=ttyS0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.repair=yes net.ifnames=0 "\
+            "\0"\
+        "storeargs_ubuntu="\
+            "setenv bootargs ${initargs_ubuntu};"\
+            "\0"\
         "upgrade_check="\
             "echo upgrade_step=${upgrade_step}; "\
             "if itest ${upgrade_step} == 3; then "\
@@ -153,8 +160,16 @@
             "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
+            "if test ${reboot_mode} = ubuntu_reboot; then "\
+            "ext4load mmc 1:d 1080000 uImage;"\
+            "ext4load mmc 1:d 10000000 uInitrd;"\
+            "ext4load mmc 1:d 20000000 kvim.dtb;"\
+            "bootm 1080000 10000000 20000000;"\
+            "fi;"\
+            "if test ${reboot_mode} != ubuntu_reboot; then "\
             "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
+            "fi;"\
             "\0"\
         "factory_reset_poweroff_protect="\
             "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
@@ -262,6 +277,15 @@
               "\0"\
 
 #define CONFIG_PREBOOT  \
+            "get_rebootmode;"\
+            "if test ${reboot_mode} = ubuntu_reboot; then "\
+            "run upgrade_check;"\
+            "run init_display;"\
+            "run storeargs_ubuntu;"\
+            "run combine_key;" \
+            "run upgrade_key;" \
+            "fi;"\
+            "if test ${reboot_mode} != ubuntu_reboot; then "\
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
@@ -270,7 +294,8 @@
             "run combine_key;" \
             "run upgrade_key;" \
             "run switch_bootmode;"\
-            "run boot_ini_check;"
+            "run boot_ini_check;" \
+	    "fi;"
 #define CONFIG_BOOTCOMMAND "run start_autoscript; run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
@@ -355,7 +380,6 @@
 #define CONFIG_SYS_NAND_BASE_LIST   {0}
 #endif
 /* endof CONFIG_AML_MTD */
-
 
 #define CONFIG_AML_SD_EMMC 1
 #ifdef	CONFIG_AML_SD_EMMC
