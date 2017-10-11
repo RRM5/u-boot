@@ -80,11 +80,6 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 			setenv("reboot_mode","hibernate");
 			break;
 		}
-		case AMLOGIC_SHUTDOWN_REBOOT:
-		{
-			setenv("reboot_mode","shutdown_reboot");
-			break;
-		}
 		case AMLOGIC_CRASH_REBOOT:
 		{
 			setenv("reboot_mode","crash_dump");
@@ -108,6 +103,11 @@ int do_get_rebootmode (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[]
 		case AMLOGIC_LIBREELEC_REBOOT:
 		{
 			setenv("reboot_mode","libreelec_reboot");
+			break;
+		}
+		case AMLOGIC_ANDROID_REBOOT:
+		{
+			setenv("reboot_mode","android_reboot");
 			break;
 		}
 		default:
@@ -166,6 +166,8 @@ int do_reboot (cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 			reboot_mode_val = AMLOGIC_UBUNTU_REBOOT;
 		else if (strcmp(mode, "libreelec_reboot") ==0)
 			reboot_mode_val = AMLOGIC_LIBREELEC_REBOOT;
+		else if (strcmp(mode, "android_reboot") ==0)
+			reboot_mode_val = AMLOGIC_ANDROID_REBOOT;
 		else {
 			printf("Can not find match reboot mode, use normal by default\n");
 			reboot_mode_val = AMLOGIC_NORMAL_BOOT;
