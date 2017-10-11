@@ -342,8 +342,8 @@ static void board_i2c_init(void)
 	board_i2c_set_pinmux();
 
 	// Amlogic I2C controller initialized
-	// Note: should be called before any I2C operation
-	aml_i2c_init();
+	// note: it must be call before any I2C operation
+	i2c_init(g_aml_i2c_plat.master_i2c_speed, 0x0);
 
 	udelay(10);
 }
@@ -387,11 +387,14 @@ int board_init(void)
 {
     //Please keep CONFIG_AML_V2_FACTORY_BURN at first place of board_init
 #ifdef CONFIG_AML_V2_FACTORY_BURN
-	aml_try_factory_usb_burning(0, gd->bd);
+	if ((0x1b8ec003 != readl(P_PREG_STICKY_REG2)) && (0x1b8ec004 != readl(P_PREG_STICKY_REG2))) {
+		aml_try_factory_usb_burning(0, gd->bd);
+	}
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 
 	clrbits_le32(PREG_PAD_GPIO0_EN_N, (1 << 2));
 	clrbits_le32(PREG_PAD_GPIO0_O, 1 << 2);
+
 	/*for LED*/
 	//clear pinmux
 	clrbits_le32(AO_RTI_PIN_MUX_REG, ((1<<3)|(1<<4)));
@@ -424,6 +427,7 @@ int board_init(void)
 #ifdef CONFIG_SYS_I2C_AML
 	board_i2c_init();
 #endif
+
 	return 0;
 }
 #ifdef CONFIG_AML_IRDETECT_EARLY
@@ -471,6 +475,8 @@ int board_late_init(void){
 		#endif
 	}
 #ifdef CONFIG_AML_V2_FACTORY_BURN
+	if (0x1b8ec003 == readl(P_PREG_STICKY_REG2))
+		aml_try_factory_usb_burning(1, gd->bd);
 	aml_try_factory_sdcard_burning(0, gd->bd);
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
 	if (get_cpu_id().family_id == MESON_CPU_MAJOR_ID_GXL) {
@@ -486,7 +492,7 @@ int board_late_init(void){
 	ret = run_command("store dtb read $dtb_mem_addr", 1);
 	if (ret) {
 		printf("%s(): [store dtb read $dtb_mem_addr] fail\n", __func__);
-		#ifdef CONFIG_DTB_MEM_ADDR
+#ifdef CONFIG_DTB_MEM_ADDR
 		char cmd[64];
 		printf("load dtb to %x\n", CONFIG_DTB_MEM_ADDR);
 		sprintf(cmd, "store dtb read %x", CONFIG_DTB_MEM_ADDR);
@@ -494,9 +500,8 @@ int board_late_init(void){
 		if (ret) {
 			printf("%s(): %s fail\n", __func__, cmd);
 		}
-		#endif
-	}
-
+#endif
+}
 
 	return 0;
 }
@@ -521,18 +526,18 @@ int check_ddrsize(void)
 		ddr_size += gd->bd->bi_dram[i].size;
 	}
 #if defined(CONFIG_SYS_MEM_TOP_HIDE)
-	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
+		ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
 #endif
 	switch (ddr_size) {
-		case 0x80000000:
-			setenv("ddr_size", "2"); //2G DDR
-			break;
-		case 0xc0000000:
-			setenv("ddr_size", "3"); //3G DDR
-			break;
-		default:
-			setenv("ddr_size", "0");
-			break;
+	case 0x80000000:
+		setenv("ddr_size", "2"); //2G DDR
+		break;
+	case 0xc0000000:
+		setenv("ddr_size", "3"); //3G DDR
+		break;
+	default:
+		setenv("ddr_size", "0");
+		break;
 	}
 	return 0;
 }

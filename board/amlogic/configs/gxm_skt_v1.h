@@ -205,6 +205,9 @@
                 "if keyman read usid ${loadaddr} str; then "\
                     "setenv bootargs ${bootargs} androidboot.serialno=${usid};"\
                     "setenv serial ${usid};"\
+                "else "\
+                    "setenv bootargs ${bootargs} androidboot.serialno=1234567890;"\
+                    "setenv serial 1234567890;"\
                 "fi;"\
                 "if keyman read mac ${loadaddr} str; then "\
                     "setenv bootargs ${bootargs} mac=${mac} androidboot.mac=${mac};"\
@@ -361,6 +364,7 @@
 #define CONFIG_USB_GADGET 1
 #define CONFIG_USBDOWNLOAD_GADGET 1
 #define CONFIG_SYS_CACHELINE_SIZE 64
+#define CONFIG_FASTBOOT_MAX_DOWN_SIZE	0x8000000
 #define CONFIG_DEVICE_PRODUCT	"gxm_skt"
 
 //UBOOT Facotry usb/sdcard burning config
@@ -473,6 +477,15 @@
   #define CONFIG_AML_CUSTOMER_ID  CONFIG_CUSTOMER_ID
 #endif
 #define CONFIG_INTERNAL_PHY
+
+//use hardware sha2
+//#define CONFIG_AML_HW_SHA2
+
+//use sha2 command
+//#define CONFIG_CMD_SHA2
+
+//add hardware aes
+//#define CONFIG_AML_HW_AES
 
 #endif
 

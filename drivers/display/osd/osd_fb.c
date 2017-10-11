@@ -37,6 +37,7 @@
 #ifdef CONFIG_DDR_AUTO_DTB
 extern int check_ddrsize(void);
 #endif
+
 #define INVALID_BPP_ITEM {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 static const struct color_bit_define_s default_color_format_array[] = {
 	INVALID_BPP_ITEM,
@@ -235,6 +236,8 @@ unsigned long get_fb_addr(void)
 {
 	char *dt_addr = NULL;
 	unsigned long fb_addr = 0;
+	static int initrd_set = 0;
+	char str_fb_addr[32];
 #ifdef CONFIG_OF_LIBFDT
 	int parent_offset;
 	char *propdata;
@@ -279,6 +282,13 @@ unsigned long get_fb_addr(void)
 		}
 	}
 #endif
+	if ((!initrd_set) && (get_cpu_id().family_id >= MESON_CPU_MAJOR_ID_AXG)) {
+		sprintf(str_fb_addr,"%lx",fb_addr);
+		setenv("initrd_high", str_fb_addr);
+		initrd_set = 1;
+		osd_logi("set initrd_high: 0x%s\n", str_fb_addr);
+	}
+
 	osd_logi("fb_addr for logo: 0x%lx\n", fb_addr);
 	return fb_addr;
 }
@@ -299,6 +309,7 @@ void *video_hw_init(void)
 #ifdef CONFIG_DDR_AUTO_DTB
 	check_ddrsize();
 #endif
+
 	vout_init();
 	fb_addr = get_fb_addr();
 #ifdef CONFIG_OSD_SCALE_ENABLE
@@ -441,7 +452,7 @@ int rle8_decode(uchar *ptr, bmp_image_t *bmap_rle8, ulong width_bmp, ulong heigh
 
 int video_display_bitmap(ulong bmp_image, int x, int y)
 {
-	vidinfo_t *info = NULL;
+	struct vinfo_s *info = NULL;
 #if defined CONFIG_AML_VOUT
 	info = vout_get_current_vinfo();
 #endif
@@ -457,8 +468,8 @@ int video_display_bitmap(ulong bmp_image, int x, int y)
 	unsigned long pheight = fb_gdev.fb_height;
 	unsigned long pwidth = fb_gdev.fb_width;
 #else
-	unsigned long pheight = info->vl_row;
-	unsigned long pwidth = info->vl_col;
+	unsigned long pheight = info->width;
+	unsigned long pwidth = info->height;
 #endif
 	unsigned colors, bpix, bmp_bpix;
 	int lcd_line_length = (pwidth * NBITS(info->vl_bpix)) / 8;

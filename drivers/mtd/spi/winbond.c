@@ -139,7 +139,6 @@ static const struct winbond_spi_flash_params winbond_spi_flash_table[] = {
 		.nr_blocks          = 256,
 		.name               = "W25Q128",
 	},
-
 	{
 		.id                 = 0x6015,
 		.l2_page_size       = 8,
@@ -421,14 +420,14 @@ struct spi_flash *spi_flash_probe_winbond(struct spi_slave *spi, u8 *idcode)
 	}
 
 	if (i == ARRAY_SIZE(winbond_spi_flash_table)) {
-		printf("SF: Unsupported Winbond ID %02x%02x\n",
+		debug("SF: Unsupported Winbond ID %02x%02x\n",
 				idcode[1], idcode[2]);
 		return NULL;
 	}
 
 	stm = malloc(sizeof(struct winbond_spi_flash));
 	if (!stm) {
-		debug("SF: Failed to allocate memory\n");
+		printf("SF: Failed to allocate memory\n");
 		return NULL;
 	}
 

@@ -1,7 +1,7 @@
 
 /*
  *
- * Copyright (C) 2015 Amlogic, Inc. All rights reserved.
+ * Copyright (C) 2017 Khadas.com All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -50,7 +50,6 @@ DECLARE_GLOBAL_DATA_PTR;
 
 //new static eth setup
 struct eth_board_socket*  eth_board_skt;
-
 
 int serial_set_pin_port(unsigned long port_base)
 {
@@ -368,16 +367,16 @@ int board_init(void)
 {
     //Please keep CONFIG_AML_V2_FACTORY_BURN at first place of board_init
 #ifdef CONFIG_AML_V2_FACTORY_BURN
-	if (0x1b8ec003 != readl(P_PREG_STICKY_REG2))
+	if ((0x1b8ec003 != readl(P_PREG_STICKY_REG2)) && (0x1b8ec004 != readl(P_PREG_STICKY_REG2))) {
 		aml_try_factory_usb_burning(0, gd->bd);
+	}
 #endif// #ifdef CONFIG_AML_V2_FACTORY_BURN
-
 	/* LED Pin: GPIOAO_9 */
-	clrbits_le32(AO_GPIO_O_EN_N, 1 << 9);	// output mode
-	setbits_le32(AO_GPIO_O_EN_N, 1 << 25);	// set 1
+	clrbits_le32(AO_GPIO_O_EN_N, 1 << 9);   // output mode
+	setbits_le32(AO_GPIO_O_EN_N, 1 << 25);  // set 1
 
-	/*Power on GPIOAO_2 for VCC_5V*/
-	clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
+	/* FIXME: Power on GPIOAO_2 for VCC_5V*/
+	//clrbits_le32(P_AO_GPIO_O_EN_N, ((1<<2)|(1<<18)));
 #ifdef CONFIG_USB_XHCI_AMLOGIC_GXL
 	board_usb_init(&g_usb_config_GXL_skt,BOARD_USB_MODE_HOST);
 #endif /*CONFIG_USB_XHCI_AMLOGIC*/
@@ -414,19 +413,27 @@ U_BOOT_CMD(hdmi_init, CONFIG_SYS_MAXARGS, 0, do_hdmi_init,
 #endif
 #ifdef CONFIG_BOARD_LATE_INIT
 int board_late_init(void){
-	//update env before anyone using it
-	run_command("get_rebootmode; echo reboot_mode=${reboot_mode}; "\
-			"if test ${reboot_mode} = factory_reset; then "\
-			"defenv_reserv aml_dt;setenv upgrade_step 2;save; fi;", 0);
-	run_command("if itest ${upgrade_step} == 1; then "\
-				"defenv_reserv; setenv upgrade_step 2; saveenv; fi;", 0);
+	/* ENV need update in following cases:
+	 * - Bootloader upgrade
+	 * - New ROM upgrade(the built-in bootloader might be changed)
+	 */
+	run_command("get_rebootmode;" \
+				"echo reboot_mode=${reboot_mode};" \
+				"if test ${reboot_mode} = factory_reset; then " \
+					"defenv_reserv aml_dt;" \
+					"setenv upgrade_step 2;" \
+					"save;" \
+				"fi;", 0);
+	run_command("if itest ${upgrade_step} == 1; then " \
+					"defenv_reserv;" \
+					"setenv upgrade_step 2;" \
+					"saveenv;" \
+				"fi;", 0);
 
-#ifndef CONFIG_AML_IRDETECT_EARLY
-	/* after  */
-	run_command("cvbs init;hdmitx hpd", 0);
+	/* HDMI setup */
+	run_command("hdmitx hpd", 0);
 	run_command("vout output $outputmode", 0);
-#endif
-	/*add board late init function here*/
+	/* Load DTB */
 #ifndef DTB_BIND_KERNEL
 	int ret;
 	ret = run_command("store dtb read $dtb_mem_addr", 1);
@@ -457,6 +464,16 @@ int board_late_init(void){
 				}
 		}
 #endif// #ifndef DTB_BIND_KERNEL
+
+	/* Khadas VIM check */
+	run_command("saradc open 1;" \
+				"if saradc get_in_range 0x1a0 0x220; then " \
+					"echo Product checking: Khadas VIM.;" \
+				"else  " \
+					"echo Product checking: Unknown!;" \
+					"sleep 5; reset;" \
+				"fi;", 0);
+
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	if (0x1b8ec003 == readl(P_PREG_STICKY_REG2))
 		aml_try_factory_usb_burning(1, gd->bd);
@@ -479,39 +496,6 @@ phys_size_t get_effective_memsize(void)
 	return (((readl(AO_SEC_GP_CFG0)) & 0xFFFF0000) << 4);
 #endif
 }
-
-#ifdef CONFIG_MULTI_DTB
-int checkhw(char * name)
-{
-	unsigned int ddr_size=0;
-	char loc_name[64] = {0};
-	int i;
-	for (i=0; i<CONFIG_NR_DRAM_BANKS; i++) {
-		ddr_size += gd->bd->bi_dram[i].size;
-	}
-#if defined(CONFIG_SYS_MEM_TOP_HIDE)
-	ddr_size += CONFIG_SYS_MEM_TOP_HIDE;
-#endif
-	switch (ddr_size) {
-		case 0x80000000:
-			strcpy(loc_name, "kvim_2g\0");
-			break;
-		case 0x40000000:
-			strcpy(loc_name, "kvim_1g\0");
-			break;
-		case 0x2000000:
-			strcpy(loc_name, "kvim_512m\0");
-			break;
-		default:
-			//printf("DDR size: 0x%x, multi-dt doesn't support\n", ddr_size);
-			strcpy(loc_name, "kvim_unsupport");
-			break;
-	}
-	strcpy(name, loc_name);
-	setenv("aml_dt", loc_name);
-	return 0;
-}
-#endif
 
 const char * const _env_args_reserve_[] =
 {
