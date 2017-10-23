@@ -99,8 +99,10 @@
             "if fatload usb 0 1020000 s905_autoscript; then autoscr 1020000; fi"\
             "\0"\
         "multiboot="\
-            "if test ${bls} = linux; then if ext4load mmc 1:d 1020000 emmc_autoscript; then autoscr 1020000; fi; fi; "\
-            "if test ${bls} = libreelec; then if ext4load mmc 1:c 1020000 emmc_autoscript; then autoscr 1020000; fi; fi;"\
+            "if test ${bls} = linux; then if fatload mmc 1:4 1020000 emmc_linux; then autoscr 1020000; fi; fi; "\
+            "if test ${bls} = libreelec; then if fatload mmc 1:4 1020000 emmc_libreelec; then autoscr 1020000; fi; fi;"\
+            "if test ${bls} = android; then if fatload mmc 1:4 1020000 emmc_android; then autoscr 1020000; fi; fi;"\
+            "if fatload mmc 1:4 1020000 emmc_default; then autoscr 1020000; fi;"\
             "\0"\
         "upgrade_step=0\0"\
         "jtag=disable\0"\
@@ -132,12 +134,6 @@
         "boot_part=boot\0"\
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
-            "\0"\
-        "initargs_ubuntu="\
-            "root=/dev/rootfs rootflags=data=writeback rw logo=osd1,loaded,0x3d800000,1080p60hz vout=1080p60hz,enable hdmimode=1080p60hz console=ttyS0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.repair=yes net.ifnames=0 "\
-            "\0"\
-        "storeargs_ubuntu="\
-            "setenv bootargs ${initargs_ubuntu} ddr_size=${ddr_size};"\
             "\0"\
         "upgrade_check="\
             "echo upgrade_step=${upgrade_step}; "\
