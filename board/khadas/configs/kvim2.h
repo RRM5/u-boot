@@ -47,7 +47,7 @@
 #define CONFIG_CEC_WAKEUP
 
 #define CONFIG_CMD_CFGLOAD
-#define CONFIG_INSTABOOT
+//#define CONFIG_INSTABOOT
 
 /* config for kbi */
 #define CONFIG_KHADAS_KBI 1

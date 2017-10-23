@@ -2,7 +2,7 @@
 /*
  * board/khadas/configs/kvim.h
  *
- * Copyright (C) 2015 Khadas, Inc. All rights reserved.
+ * Copyright (C) 2017 Khadas, Inc. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,12 +42,11 @@
 #define CONFIG_VDDEE_SLEEP_VOLTAGE	 850		// voltage for suspend
 
 /* configs for CEC */
-#define CONFIG_CEC_OSD_NAME		"Kvim"
+#define CONFIG_CEC_OSD_NAME		"KVim"
 #define CONFIG_CEC_WAKEUP
 
-//#define CONFIG_INSTABOOT
-/* configs for dtb in boot.img */
-//#define DTB_BIND_KERNEL
+#define CONFIG_CMD_CFGLOAD
+#define CONFIG_INSTABOOT
 
 /* SMP Definitinos */
 #define CPU_RELEASE_ADDR		secondary_boot_func
@@ -60,6 +59,7 @@
 
 /* support ext4*/
 #define CONFIG_CMD_EXT4 1
+#define CONFIG_CMD_EXT2 1
 
 /* Bootloader Control Block function
    That is used for recovery and the bootloader to talk to each other

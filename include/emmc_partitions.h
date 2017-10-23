@@ -38,11 +38,17 @@
 #define		MMC_BOTTOM_RSV_SIZE				(0)
 #endif		/* CONFIG_AML_MMC_INHERENT_PART */
 
-#define     MMC_CACHE_NAME                  "cache"
+// #define     MMC_CACHE_NAME                  "cache"
 // #define     MMC_CACHE_SIZE                  (512*SZ_1M) // this is not used and should be get from spl
 
 #define     MMC_ENV_NAME                    "env"
 #define     MMC_ENV_SIZE                    (8*SZ_1M)
+
+#define     MMC_MULTIBOOT_NAME              "multiboot"
+#define     MMC_MULTIBOOT_SIZE              (32*SZ_1M) // 32MB
+
+#define     MMC_LOGO_NAME                   "logo"
+#define     MMC_LOGO_SIZE                   (32*SZ_1M) // 32MB
 
 #define     MMC_KEY_NAME                    "key"
 #define     MMC_KEY_SIZE                    (256*1024)

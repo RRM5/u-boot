@@ -109,8 +109,10 @@ struct partitions emmc_partition_table[] = {
 	PARTITION_ELEMENT(MMC_RESERVED_NAME, MMC_RESERVED_SIZE, 0),
 	/* prior partitions, same partition name with dts*/
 	/* partition size will be overide by dts*/
-	PARTITION_ELEMENT(MMC_CACHE_NAME, 0, 0),
+//	PARTITION_ELEMENT(MMC_CACHE_NAME, 0, 0),
 	PARTITION_ELEMENT(MMC_ENV_NAME, MMC_ENV_SIZE, 0),
+	PARTITION_ELEMENT(MMC_MULTIBOOT_NAME, MMC_MULTIBOOT_SIZE, 0),
+	PARTITION_ELEMENT(MMC_LOGO_NAME, MMC_LOGO_SIZE, 0),
 };
 
 struct virtual_partition virtual_partition_table[] = {
