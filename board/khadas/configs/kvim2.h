@@ -99,8 +99,7 @@
             "if fatload usb 0 1020000 s905_autoscript; then autoscr 1020000; fi"\
             "\0"\
         "multiboot="\
-            "if fatload mmc 1:3 1020000 emmc_${bls}; then autoscr 1020000; fi; fi; "\
-            "if fatload mmc 1:3 1020000 emmc_default; then autoscr 1020000; fi;"\
+            "if fatload mmc 1:3 1020000 emmc_${bls}; then autoscr 1020000; else if fatload mmc 1:3 1020000 emmc_default; then autoscr 1020000; fi; fi;"\
             "\0"\
         "upgrade_step=0\0"\
         "jtag=disable\0"\
