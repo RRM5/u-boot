@@ -324,5 +324,6 @@ obj-$(CONFIG_AML_LCD) += cmd_lcd.o
 obj-$(CONFIG_CMD_RSVMEM) += cmd_rsvmem.o
 obj-$(CONFIG_CMD_CHIPID) += cmd_chipid.o
 obj-$(CONFIG_CMD_WATCHDOG) += cmd_watchdog.o
+obj-$(CONFIG_CMD_CFGLOAD) += cmd_cfgload.o
 
 CFLAGS_env_embedded.o := -Wa,--no-warn -DENV_CRC=$(shell tools/envcrc 2>/dev/null)
