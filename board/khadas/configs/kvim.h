@@ -103,6 +103,7 @@
         "loadaddr=1080000\0"\
         "outputmode=1080p60hz\0" \
         "hdmimode=1080p60hz\0" \
+        "cvbsmode=576cvbs\0" \
         "display_width=1920\0" \
         "display_height=1080\0" \
         "display_bpp=16\0" \
@@ -124,16 +125,18 @@
         "EnableSelinux=permissive\0"\
         "recovery_part=recovery\0"\
         "recovery_offset=0\0"\
+        "cvbs_drv=0\0"\
         "active_slot=_a\0"\
         "boot_part=boot\0"\
+        "bls=android\0"\
         "initargs="\
             "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
             "\0"\
-        "initargs_ubuntu="\
-            "root=/dev/rootfs rootflags=data=writeback rw logo=osd1,loaded,0x3d800000,1080p60hz vout=1080p60hz,enable hdmimode=1080p60hz console=ttyS0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.repair=yes net.ifnames=0 "\
+        "initargs_linux="\
+            "root=/dev/linux rootflags=data=writeback rw logo=osd1,loaded,0x3d800000,1080p60hz vout=1080p60hz,enable hdmimode=1080p60hz console=ttyS0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.repair=yes net.ifnames=0 "\
             "\0"\
-        "storeargs_ubuntu="\
-            "setenv bootargs ${initargs_ubuntu};"\
+        "storeargs_linux="\
+            "setenv bootargs ${initargs_linux};"\
             "\0"\
         "upgrade_check="\
             "echo upgrade_step=${upgrade_step}; "\
@@ -160,13 +163,13 @@
             "fi;fi;fi;fi;"\
             "\0" \
         "storeboot="\
-            "if test ${reboot_mode} = ubuntu_reboot; then "\
+            "if test ${bls} = linux; then "\
             "ext4load mmc 1:d 1080000 uImage;"\
             "ext4load mmc 1:d 10000000 uInitrd;"\
             "ext4load mmc 1:d 20000000 kvim.dtb;"\
             "bootm 1080000 10000000 20000000;"\
             "fi;"\
-            "if test ${reboot_mode} != ubuntu_reboot; then "\
+            "if test ${bls} != linux; then "\
             "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; fi;"\
             "run update;"\
             "fi;"\
@@ -277,15 +280,12 @@
               "\0"\
 
 #define CONFIG_PREBOOT  \
-            "get_rebootmode;"\
-            "if test ${reboot_mode} = ubuntu_reboot; then "\
-            "run upgrade_check;"\
+            "if test ${bls} = linux; then "\
             "run init_display;"\
-            "run storeargs_ubuntu;"\
-            "run combine_key;" \
-            "run upgrade_key;" \
+            "run upgrade_key;"\
+            "run storeargs_linux;"\
             "fi;"\
-            "if test ${reboot_mode} != ubuntu_reboot; then "\
+            "if test ${bls} != linux; then "\
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect;"\
             "run upgrade_check;"\
@@ -419,9 +419,7 @@
 #define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
-#ifdef CONFIG_AML_CVBS
-#undef CONFIG_AML_CVBS
-#endif
+#define CONFIG_AML_CVBS 1
 #endif
 
 /* USB
