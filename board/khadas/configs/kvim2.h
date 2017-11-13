@@ -273,6 +273,10 @@
             "gpio set GPIODV_2;"\
             "fi;"\
             "\0"\
+         "mac_init="\
+            "kbi ethmac;"\
+            "setenv bootargs ${bootargs} mac=${eth_mac} androidboot.mac=${eth_mac};"\
+            "\0" \
 
 #define CONFIG_PREBOOT  \
             "run bcb_cmd; "\
@@ -433,7 +437,9 @@
 #define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
-#define CONFIG_AML_CVBS 1
+#ifdef CONFIG_AML_CVBS
+#undef CONFIG_AML_CVBS
+#endif
 #endif
 
 /* USB
