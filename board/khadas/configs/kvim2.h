@@ -273,14 +273,8 @@
             "gpio set GPIODV_2;"\
             "fi;"\
             "\0"\
-         "mac_init="\
-            "kbi ethmac;"\
-            "setenv bootargs ${bootargs} mac=${eth_mac} androidboot.mac=${eth_mac};"\
-            "\0" \
 
 #define CONFIG_PREBOOT  \
-            "get_rebootmode; "\
-            "if test ${reboot_mode} = ubuntu_reboot; then setenv bls linux; saveenv; fi; "\
             "run bcb_cmd; "\
             "run factory_reset_poweroff_protect; "\
             "run upgrade_check; "\
@@ -439,9 +433,7 @@
 #define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
-#ifdef CONFIG_AML_CVBS
-#undef CONFIG_AML_CVBS
-#endif
+#define CONFIG_AML_CVBS 1
 #endif
 
 /* USB
