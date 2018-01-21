@@ -61,6 +61,7 @@
   */
 #define CONFIG_BOOTLOADER_CONTROL_BLOCK
 
+/* config saradc*/
 #define CONFIG_CMD_SARADC 1
 #define CONFIG_PHY_REALTEK 1
 
@@ -87,7 +88,8 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
-        "firstboot=0\0"\
+        "boardname=kvim2\0"\
+	"firstboot=0\0"\
         "bls=android\0"\
         "start_autoscript="\
             "if usb start; then run start_usb_autoscript; if mmcinfo; then run start_mmc_autoscript;fi;fi;"\

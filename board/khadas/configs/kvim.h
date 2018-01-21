@@ -46,13 +46,7 @@
 #define CONFIG_CEC_WAKEUP
 
 #define CONFIG_CMD_CFGLOAD
-#define CONFIG_INSTABOOT
-
-/* SMP Definitinos */
-#define CPU_RELEASE_ADDR		secondary_boot_func
-
-/* config saradc*/
-#define CONFIG_CMD_SARADC 1
+//#define CONFIG_INSTABOOT
 
 /*config irblaster*/
 #define CONFIG_CMD_IRBLASTER 1
@@ -66,6 +60,12 @@
   */
 #define CONFIG_BOOTLOADER_CONTROL_BLOCK
 
+/* config saradc*/
+#define CONFIG_CMD_SARADC 1
+#define CONFIG_CMD_SARADC 1
+
+/* SMP Definitinos */
+#define CPU_RELEASE_ADDR		secondary_boot_func
 
 /* Serial config */
 #define CONFIG_CONS_INDEX 2
@@ -87,68 +87,211 @@
 /* args/envs */
 #define CONFIG_SYS_MAXARGS  64
 #define CONFIG_EXTRA_ENV_SETTINGS \
-			"boardname=kvim\0" \
-			"loadaddr=1080000\0" \
-			"dtb_mem_addr=0x1000000\0" \
-			"fdt_high=0x20000000\0" \
-			"outputmode=1080p60hz\0" \
-			"hdmimode=1080p60hz\0" \
-			"display_width=1920\0" \
-			"display_height=1080\0" \
-			"display_bpp=16\0" \
-			"display_color_index=16\0" \
-			"display_layer=osd1\0" \
-			"display_color_fg=0xffff\0" \
-			"display_color_bg=0\0" \
-			"fb_addr=0x3d800000\0" \
-			"fb_width=1920\0" \
-			"fb_height=1080\0" \
-			"start_autoscript=" \
-				"if usb start; then run start_usb_autoscript; if mmcinfo; then run start_mmc_autoscript;fi;fi;" \
-					"\0" \
-					"start_mmc_autoscript=" \
-				"if fatload mmc 0 1020000 s905_autoscript; then autoscr 1020000; fi" \
-					"\0"\
-				"start_usb_autoscript=" \
-					"if fatload usb 0 1020000 s905_autoscript; then autoscr 1020000; fi" \
-					"\0" \
-			"storeboot=" \
-				"ext4load mmc 1:5 1080000 uImage;ext4load mmc 1:5 10000000 uInitrd;ext4load mmc 1:5 20000000 kvim.dtb;bootm 1080000 10000000 20000000" \
-				"\0" \
-			"init_display=" \
-				"osd open;" \
-				"osd clear;" \
-				"imgread pic logo bootup ${loadaddr};" \
-				"bmp display ${bootup_offset}; bmp scale" \
-				"\0"\
-			"bootdisk=ramdisk\0" \
-			"bootargs=" \
-				"root=/dev/rootfs rootflags=data=writeback rw logo=osd1,loaded,0x3d800000,1080p60hz vout=1080p60hz,enable hdmimode=1080p60hz console=ttyS0,115200n8 console=tty0 no_console_suspend consoleblank=0 fsck.repair=yes net.ifnames=0 jtag=disable\0" \
-			"combine_key="\
-				"saradc open 0;"\
-				"if saradc get_in_range 0x0 0x1f; then "\
-					"echo Detect function key;"\
-					"if gpio input GPIOAO_2; then "\
-						"echo Detect combine keys;"\
-						"store init 3; fi;"\
-				"fi;"\
-				"\0"\
-			"upgrade_key=" \
-				"if gpio input GPIOAO_2; then " \
-					"echo Found upgrade button pressed; sleep 1;" \
-					"if gpio input GPIOAO_2; then update; fi;" \
-				"fi;" \
-			"\0"
-/* boot partition name for dual boot
- * - boot: for Android OS
- * - ramdisk: Ubuntu or Linux distro
- */
-#define CONFIG_PREBOOT \
-	"run init_display;" \
-	"run combine_key;" \
-	"run upgrade_key;"
+        "boardname=kvim2\0" \
+	"firstboot=0\0"\
+        "bls=android\0"\
+        "start_autoscript="\
+            "if usb start; then run start_usb_autoscript; if mmcinfo; then run start_mmc_autoscript;fi;fi;"\
+            "\0"\
+        "start_mmc_autoscript="\
+            "if fatload mmc 0 1020000 s905_autoscript; then autoscr 1020000; fi"\
+            "\0"\
+        "start_usb_autoscript="\
+            "if fatload usb 0 1020000 s905_autoscript; then autoscr 1020000; fi"\
+            "\0"\
+        "multiboot="\
+            "if fatload mmc 1:3 1020000 emmc_${bls}; then autoscr 1020000; else if fatload mmc 1:3 1020000 emmc_default; then autoscr 1020000; fi; fi;"\
+            "\0"\
+        "upgrade_step=0\0"\
+        "jtag=disable\0"\
+        "loadaddr=1080000\0"\
+        "outputmode=1080p60hz\0" \
+        "hdmimode=1080p60hz\0" \
+        "cvbsmode=576cvbs\0" \
+        "display_width=1920\0" \
+        "display_height=1080\0" \
+        "display_bpp=16\0" \
+        "display_color_index=16\0" \
+        "display_layer=osd1\0" \
+        "display_color_fg=0xffff\0" \
+        "display_color_bg=0\0" \
+        "dtb_mem_addr=0x1000000\0" \
+        "fb_addr=0x3d800000\0" \
+        "fb_width=1920\0" \
+        "fb_height=1080\0" \
+        "usb_burning=update 1000\0" \
+        "fdt_high=0x20000000\0"\
+        "try_auto_burn=update 700 750;\0"\
+        "sdcburncfg=aml_sdc_burn.ini\0"\
+        "sdc_burning=sdc_burn ${sdcburncfg}\0"\
+        "wipe_data=successful\0"\
+        "wipe_cache=successful\0"\
+        "EnableSelinux=permissive\0"\
+        "recovery_part=recovery\0"\
+        "recovery_offset=0\0"\
+        "cvbs_drv=0\0"\
+        "active_slot=_a\0"\
+        "boot_part=boot\0"\
+        "initargs="\
+            "rootfstype=ramfs init=/init console=ttyS0,115200 no_console_suspend earlyprintk=aml-uart,0xc81004c0 ramoops.pstore_en=1 ramoops.record_size=0x8000 ramoops.console_size=0x4000 "\
+            "\0"\
+        "upgrade_check="\
+            "echo upgrade_step=${upgrade_step}; "\
+            "if itest ${upgrade_step} == 3; then "\
+                "run init_display; run storeargs; run update;"\
+            "else fi;"\
+            "\0"\
+        "storeargs="\
+            "setenv bootargs ${initargs} androidboot.selinux=${EnableSelinux} logo=${display_layer},loaded,${fb_addr},${outputmode} maxcpus=${maxcpus} vout=${outputmode},enable hdmimode=${hdmimode} cvbsmode=${cvbsmode} hdmitx=${cecconfig} ddr_size=${ddr_size} cvbsdrv=${cvbs_drv}  pq=${pq} androidboot.firstboot=${firstboot} jtag=${jtag}; "\
+        "setenv bootargs ${bootargs} androidboot.hardware=amlogic;"\
+            "run cmdline_keys;"\
+            "setenv bootargs ${bootargs} androidboot.slot_suffix=${active_slot};"\
+            "\0"\
+        "switch_bootmode="\
+            "get_rebootmode;"\
+            "if test ${reboot_mode} = factory_reset; then "\
+                    "run recovery_from_flash;"\
+            "else if test ${reboot_mode} = update; then "\
+                    "run update;"\
+            "else if test ${reboot_mode} = cold_boot; then "\
+                /*"run try_auto_burn; "*/\
+            "else if test ${reboot_mode} = fastboot; then "\
+                "fastboot;"\
+            "fi;fi;fi;fi;"\
+            "\0" \
+        "storeboot="\
+            "if imgread kernel ${boot_part} ${loadaddr}; then bootm ${loadaddr}; run update; fi;"\
+            "\0"\
+        "factory_reset_poweroff_protect="\
+            "echo wipe_data=${wipe_data}; echo wipe_cache=${wipe_cache};"\
+            "if test ${wipe_data} = failed; then "\
+                "run init_display; run storeargs;"\
+                "if mmcinfo; then "\
+                    "run recovery_from_sdcard;"\
+                "fi;"\
+                "if usb start 0; then "\
+                    "run recovery_from_udisk;"\
+                "fi;"\
+                "run recovery_from_flash;"\
+            "fi; "\
+            "if test ${wipe_cache} = failed; then "\
+                "run init_display; run storeargs;"\
+                "if mmcinfo; then "\
+                    "run recovery_from_sdcard;"\
+                "fi;"\
+                "if usb start 0; then "\
+                    "run recovery_from_udisk;"\
+                "fi;"\
+                "run recovery_from_flash;"\
+            "fi; \0" \
+         "update="\
+            /*first usb burning, second sdc_burn, third ext-sd autoscr/recovery, last udisk autoscr/recovery*/\
+            "run usb_burning; "\
+            "run sdc_burning; "\
+            "if mmcinfo; then "\
+                "run recovery_from_sdcard;"\
+            "fi;"\
+            "if usb start 0; then "\
+                "run recovery_from_udisk;"\
+            "fi;"\
+            "run recovery_from_flash;"\
+            "\0"\
+        "recovery_from_sdcard="\
+            "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
+            "if fatload mmc 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
+            "if fatload mmc 0 ${loadaddr} recovery.img; then "\
+                    "if fatload mmc 0 ${dtb_mem_addr} dtb.img; then echo sd dtb.img loaded; fi;"\
+                    "wipeisb; "\
+                    "bootm ${loadaddr};fi;"\
+            "\0"\
+        "recovery_from_udisk="\
+            "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
+            "if fatload usb 0 ${loadaddr} aml_autoscript; then autoscr ${loadaddr}; fi;"\
+            "if fatload usb 0 ${loadaddr} recovery.img; then "\
+                "if fatload usb 0 ${dtb_mem_addr} dtb.img; then echo udisk dtb.img loaded; fi;"\
+                "wipeisb; "\
+                "bootm ${loadaddr};fi;"\
+            "\0"\
+        "recovery_from_flash="\
+            "setenv bootargs ${bootargs} aml_dt=${aml_dt} recovery_part={recovery_part} recovery_offset={recovery_offset};"\
+            "if itest ${upgrade_step} == 3; then "\
+                "if ext4load mmc 1:2 ${dtb_mem_addr} /recovery/dtb.img; then echo cache dtb.img loaded; fi;"\
+                "if ext4load mmc 1:2 ${loadaddr} /recovery/recovery.img; then echo cache recovery.img loaded; wipeisb; bootm ${loadaddr}; fi;"\
+            "else fi;"\
+            "if imgread kernel ${recovery_part} ${loadaddr} ${recovery_offset}; then wipeisb; bootm ${loadaddr}; fi;"\
+            "\0"\
+        "init_display="\
+            "osd open;osd clear;imgread pic logo bootup $loadaddr;bmp display $bootup_offset;bmp scale"\
+            "\0"\
+        "cmdline_keys="\
+            "if keyman init 0x1234; then "\
+                "if keyman read usid ${loadaddr} str; then "\
+                    "setenv bootargs ${bootargs} androidboot.serialno=${usid};"\
+                    "setenv serial ${usid};"\
+                "fi;"\
+                "kbi ethmac;"\
+                "setenv bootargs ${bootargs} mac=${eth_mac} androidboot.mac=${eth_mac};"\
+                "if keyman read deviceid ${loadaddr} str; then "\
+                    "setenv bootargs ${bootargs} androidboot.deviceid=${deviceid};"\
+                "fi;"\
+            "fi;"\
+            "\0"\
+        "bcb_cmd="\
+            "get_valid_slot;"\
+            "\0"\
+        "combine_key="\
+            "saradc open 0;"\
+            "if saradc get_in_range 0x0 0x1f; then "\
+            "echo Detect function key;"\
+            "if gpio input GPIOAO_2; then "\
+                "echo Detect combine keys;"\
+                "store init 3; fi;"\
+            "fi;"\
+            "\0"\
+        "upgrade_key="\
+            "if gpio input GPIOAO_2; then "\
+                "echo detect upgrade key; sleep 3;"\
+                "if gpio input GPIOAO_2; then run update; fi;"\
+            "fi;"\
+            "\0"\
+        "vim2_check="\
+            "saradc open 1;"\
+            "if saradc get_in_range 0x1a0 0x220; then "\
+                "echo Product checking: pass!;"\
+            "else if saradc get_in_range 0x0 0x1cf; then "\
+                "echo Product checking: fail!; sleep 5; reboot;"\
+            "fi;fi;"\
+            "\0"\
+        "boot_ini_check="\
+             "cfgload;"\
+              "\0"\
+         "wol_init="\
+            "kbi powerstate;"\
+            "kbi trigger wol r;"\
+            "setenv bootargs ${bootargs} wol_enable=${wol_enable};"\
+            "if test ${power_state} = 1; then "\
+            "kbi trigger wol w 1;"\
+            "gpio set GPIODV_2;"\
+            "fi;"\
+            "\0"\
+         "mac_init="\
+            "kbi ethmac;"\
+            "setenv bootargs ${bootargs} mac=${eth_mac} androidboot.mac=${eth_mac};"\
+            "\0" \
 
-#define CONFIG_BOOTCOMMAND "run start_autoscript; run storeboot"
+#define CONFIG_PREBOOT  \
+            "run bcb_cmd; "\
+            "run factory_reset_poweroff_protect; "\
+            "run upgrade_check; "\
+            "run init_display; "\
+            "run storeargs; "\
+            "run combine_key; "\
+            "run upgrade_key; "\
+            "run wol_init; "\
+            "run switch_bootmode; "\
+            "run boot_ini_check;"
+
+#define CONFIG_BOOTCOMMAND "run start_autoscript; run multiboot; run storeboot"
 
 //#define CONFIG_ENV_IS_NOWHERE  1
 #define CONFIG_ENV_SIZE   (64*1024)
@@ -203,7 +346,7 @@
 /* support for mtd */
 //#define CONFIG_AML_MTD 1
 /* support for nftl */
-#define CONFIG_AML_NAND	1
+//#define CONFIG_AML_NAND	1
 
 #if defined(CONFIG_AML_NAND) && defined(CONFIG_AML_MTD)
 #error CONFIG_AML_NAND/CONFIG_AML_MTD can not support at the sametime;
@@ -235,7 +378,6 @@
 #define CONFIG_SYS_NAND_BASE_LIST   {0}
 #endif
 /* endof CONFIG_AML_MTD */
-
 
 #define CONFIG_AML_SD_EMMC 1
 #ifdef	CONFIG_AML_SD_EMMC
@@ -276,7 +418,9 @@
 #define CONFIG_CMD_BMP 1
 
 #if defined(CONFIG_AML_VOUT)
+#ifdef CONFIG_AML_CVBS
 #undef CONFIG_AML_CVBS
+#endif
 #endif
 
 /* USB
@@ -311,9 +455,7 @@
 #define CONFIG_SD_BURNING_SUPPORT_UI            1       //Displaying upgrading progress bar when sdcard/udisk burning
 
 #define CONFIG_AML_SECURITY_KEY                 1
-#ifndef DTB_BIND_KERNEL
 #define CONFIG_UNIFY_KEY_MANAGE                 1
-#endif
 
 /* net */
 #define CONFIG_CMD_NET   1
@@ -324,8 +466,8 @@
 	#define CONFIG_CMD_PING 1
 	#define CONFIG_CMD_DHCP 1
 	#define CONFIG_CMD_RARP 1
-	#define CONFIG_HOSTNAME        arm_gxbb
-	#define CONFIG_RANDOM_ETHADDR  1				   /* use random eth addr, or default */
+	#define CONFIG_HOSTNAME        KVim
+	#define CONFIG_RANDOM_ETHADDR  1		   /* use random eth addr, or default */
 	#define CONFIG_ETHADDR         00:15:18:01:81:31   /* Ethernet address */
 	#define CONFIG_IPADDR          10.18.9.97          /* Our ip address */
 	#define CONFIG_GATEWAYIP       10.18.9.1           /* Our getway ip address */
@@ -352,7 +494,6 @@
 #define CONFIG_CMD_JTAG	1
 #define CONFIG_CMD_AUTOSCRIPT 1
 #define CONFIG_CMD_MISC 1
-#define CONFIG_CMD_SARADC 1
 
 /*file system*/
 #define CONFIG_DOS_PARTITION 1
@@ -361,8 +502,6 @@
 #define CONFIG_FS_FAT 1
 #define CONFIG_FS_EXT4 1
 #define CONFIG_LZO 1
-#define CONFIG_CMD_EXT2 1
-#define CONFIG_CMD_EXT4 1
 
 /* Cache Definitions */
 //#define CONFIG_SYS_DCACHE_OFF
@@ -379,18 +518,16 @@
 #define CONFIG_CMD_ITEST    1
 #define CONFIG_CMD_CPU_TEMP 1
 #define CONFIG_SYS_MEM_TOP_HIDE 0x08000000 //hide 128MB for kernel reserve
-//#define CONFIG_MULTI_DTB	1
-
 #define CONFIG_CMD_CHIPID 1
+#define CONFIG_CMDLINE_EDITING 1
+#define CONFIG_AUTO_COMPLETE 1
+
 /* debug mode defines */
 //#define CONFIG_DEBUG_MODE           1
 #ifdef CONFIG_DEBUG_MODE
 #define CONFIG_DDR_CLK_DEBUG        636
 #define CONFIG_CPU_CLK_DEBUG        600
 #endif
-
-#define CONFIG_CMDLINE_EDITING 1
-#define CONFIG_AUTO_COMPLETE 1
 
 //support secure boot
 #define CONFIG_AML_SECURE_UBOOT   1
