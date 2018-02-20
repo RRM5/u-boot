@@ -465,15 +465,6 @@ int board_late_init(void){
 		}
 #endif// #ifndef DTB_BIND_KERNEL
 
-	/* Khadas VIM check */
-	run_command("saradc open 1;" \
-				"if saradc get_in_range 0x1a0 0x220; then " \
-					"echo Product checking: Khadas VIM.;" \
-				"else  " \
-					"echo Product checking: Unknown!;" \
-					"sleep 5; reset;" \
-				"fi;", 0);
-
 #ifdef CONFIG_AML_V2_FACTORY_BURN
 	if (0x1b8ec003 == readl(P_PREG_STICKY_REG2))
 		aml_try_factory_usb_burning(1, gd->bd);
