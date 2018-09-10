@@ -1,7 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  *  Copyright (C) 2012 Altera <www.altera.com>
- *
- * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include "skeleton.dtsi"
@@ -14,12 +13,19 @@
 	aliases {
 		ethernet0 = &gmac0;
 		ethernet1 = &gmac1;
+		i2c0 = &i2c0;
+		i2c1 = &i2c1;
+		i2c2 = &i2c2;
+		i2c3 = &i2c3;
 		serial0 = &uart0;
 		serial1 = &uart1;
 		timer0 = &timer0;
 		timer1 = &timer1;
 		timer2 = &timer2;
 		timer3 = &timer3;
+		spi0 = &qspi;
+		spi1 = &spi0;
+		spi2 = &spi1;
 	};
 
 	cpus {
@@ -502,6 +508,8 @@
 			compatible = "snps,designware-i2c";
 			reg = <0xffc04000 0x1000>;
 			clocks = <&l4_sp_clk>;
+			resets = <&rst I2C0_RESET>;
+			reset-names = "i2c";
 			interrupts = <0 158 0x4>;
 			status = "disabled";
 		};
@@ -512,6 +520,8 @@
 			compatible = "snps,designware-i2c";
 			reg = <0xffc05000 0x1000>;
 			clocks = <&l4_sp_clk>;
+			resets = <&rst I2C1_RESET>;
+			reset-names = "i2c";
 			interrupts = <0 159 0x4>;
 			status = "disabled";
 		};
@@ -522,6 +532,8 @@
 			compatible = "snps,designware-i2c";
 			reg = <0xffc06000 0x1000>;
 			clocks = <&l4_sp_clk>;
+			resets = <&rst I2C2_RESET>;
+			reset-names = "i2c";
 			interrupts = <0 160 0x4>;
 			status = "disabled";
 		};
@@ -532,6 +544,8 @@
 			compatible = "snps,designware-i2c";
 			reg = <0xffc07000 0x1000>;
 			clocks = <&l4_sp_clk>;
+			resets = <&rst I2C3_RESET>;
+			reset-names = "i2c";
 			interrupts = <0 161 0x4>;
 			status = "disabled";
 		};
@@ -546,6 +560,7 @@
 
 			porta: gpio-controller@0 {
 				compatible = "snps,dw-apb-gpio-port";
+				bank-name = "porta";
 				gpio-controller;
 				#gpio-cells = <2>;
 				snps,nr-gpios = <29>;
@@ -566,6 +581,7 @@
 
 			portb: gpio-controller@0 {
 				compatible = "snps,dw-apb-gpio-port";
+				bank-name = "portb";
 				gpio-controller;
 				#gpio-cells = <2>;
 				snps,nr-gpios = <29>;
@@ -586,6 +602,7 @@
 
 			portc: gpio-controller@0 {
 				compatible = "snps,dw-apb-gpio-port";
+				bank-name = "portc";
 				gpio-controller;
 				#gpio-cells = <2>;
 				snps,nr-gpios = <27>;
@@ -617,7 +634,7 @@
 			arm,data-latency = <2 1 1>;
 		};
 
-		mmc: dwmmc0@ff704000 {
+		mmc0: dwmmc0@ff704000 {
 			compatible = "altr,socfpga-dw-mshc";
 			reg = <0xff704000 0x1000>;
 			interrupts = <0 139 4>;
@@ -638,7 +655,9 @@
 			clocks = <&qspi_clk>;
 			ext-decoder = <0>;  /* external decoder */
 			num-cs = <4>;
-			fifo-depth = <128>;
+			cdns,fifo-depth = <128>;
+			cdns,fifo-width = <4>;
+			cdns,trigger-address = <0x00000000>;
 			bus-num = <2>;
 			status = "disabled";
 		};

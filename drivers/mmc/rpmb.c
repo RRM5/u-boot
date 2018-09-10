@@ -1,15 +1,15 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright 2014, Staubli Faverges
  * Pierre Aubert
  *
  * eMMC- Replay Protected Memory Block
  * According to JEDEC Standard No. 84-A441
- *
- * SPDX-License-Identifier:	GPL-2.0+
  */
 
 #include <config.h>
 #include <common.h>
+#include <memalign.h>
 #include <mmc.h>
 #include <u-boot/sha256.h>
 #include "mmc_private.h"

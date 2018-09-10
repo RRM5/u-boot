@@ -1,7 +1,6 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Copyright 2013 Freescale Semiconductor, Inc.
- *
- * SPDX-License-Identifier:	GPL-2.0+
  */
 #include <common.h>
 #include <phy.h>
@@ -50,7 +49,8 @@ phy_interface_t fman_port_enet_if(enum fm_port port)
 	switch (port) {
 	case FM1_DTSEC1:
 	case FM1_DTSEC2:
-		if (is_serdes_configured(QSGMII_SW1_A + port - FM1_DTSEC1))
+		if (is_serdes_configured(QSGMII_SW1_A + port - FM1_DTSEC1) ||
+		    is_serdes_configured(SGMII_SW1_MAC1  + port - FM1_DTSEC1))
 			return PHY_INTERFACE_MODE_QSGMII;
 	case FM1_DTSEC3:
 	case FM1_DTSEC4:

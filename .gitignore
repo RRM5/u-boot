@@ -20,14 +20,6 @@
 *.bin
 *.patch
 *.cfgtmp
-*.diff
-*.bl2
-*.tpl
-*.efuse
-*.encrypt
-
-# folder
-customer/
 
 # host programs on Cygwin
 *.exe
@@ -38,8 +30,9 @@ customer/
 #
 # Top-level generic files
 #
+fit-dtb.blob
 /MLO*
-/SPL
+/SPL*
 /System.map
 /u-boot*
 /boards.cfg
@@ -56,7 +49,7 @@ customer/
 /LOG
 /spl/
 /tpl/
-/build/
+/defconfig
 
 #
 # Generated include files
@@ -92,3 +85,7 @@ GTAGS
 *.orig
 *~
 \#*#
+
+# gcc code coverage files
+*.gcda
+*.gcno

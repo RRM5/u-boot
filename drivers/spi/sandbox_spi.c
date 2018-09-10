@@ -15,12 +15,10 @@
 #include <spi_flash.h>
 #include <os.h>
 
-#include <asm/errno.h>
+#include <linux/errno.h>
 #include <asm/spi.h>
 #include <asm/state.h>
 #include <dm/device-internal.h>
-
-DECLARE_GLOBAL_DATA_PTR;
 
 #ifndef CONFIG_SPI_IDLE_VAL
 # define CONFIG_SPI_IDLE_VAL 0xFF
@@ -160,6 +158,5 @@ U_BOOT_DRIVER(spi_sandbox) = {
 	.name	= "spi_sandbox",
 	.id	= UCLASS_SPI,
 	.of_match = sandbox_spi_ids,
-	.per_child_auto_alloc_size	= sizeof(struct spi_slave),
 	.ops	= &sandbox_spi_ops,
 };

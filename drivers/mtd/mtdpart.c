@@ -1,11 +1,10 @@
+// SPDX-License-Identifier: GPL-2.0+
 /*
  * Simple MTD partitioning layer
  *
  * Copyright © 2000 Nicolas Pitre <nico@fluxnic.net>
  * Copyright © 2002 Thomas Gleixner <gleixner@linutronix.de>
  * Copyright © 2000-2010 David Woodhouse <dwmw2@infradead.org>
- *
- * SPDX-License-Identifier:	GPL-2.0+
  *
  */
 
@@ -20,7 +19,7 @@
 
 #include <common.h>
 #include <malloc.h>
-#include <asm/errno.h>
+#include <linux/errno.h>
 #include <linux/compat.h>
 #include <ubi_uboot.h>
 
@@ -29,9 +28,7 @@
 #include <linux/err.h>
 
 #include "mtdcore.h"
-#ifdef CONFIFG_AML_MTDPART
-#include <jffs2/load_kernel.h>
-#endif
+
 /* Our partition linked list */
 static LIST_HEAD(mtd_partitions);
 #ifndef __UBOOT__
@@ -323,6 +320,13 @@ static void part_resume(struct mtd_info *mtd)
 }
 #endif
 
+static int part_block_isreserved(struct mtd_info *mtd, loff_t ofs)
+{
+	struct mtd_part *part = PART(mtd);
+	ofs += part->offset;
+	return part->master->_block_isreserved(part->master, ofs);
+}
+
 static int part_block_isbad(struct mtd_info *mtd, loff_t ofs)
 {
 	struct mtd_part *part = PART(mtd);
@@ -461,6 +465,8 @@ static struct mtd_part *allocate_partition(struct mtd_info *master,
 		slave->mtd._unlock = part_unlock;
 	if (master->_is_locked)
 		slave->mtd._is_locked = part_is_locked;
+	if (master->_block_isreserved)
+		slave->mtd._block_isreserved = part_block_isreserved;
 	if (master->_block_isbad)
 		slave->mtd._block_isbad = part_block_isbad;
 	if (master->_block_markbad)
@@ -497,7 +503,7 @@ static struct mtd_part *allocate_partition(struct mtd_info *master,
 	if (slave->mtd.size == MTDPART_SIZ_FULL)
 		slave->mtd.size = master->size - slave->offset;
 
-	printk("0x%012llx-0x%012llx : \"%s\"\n", (unsigned long long)slave->offset,
+	debug("0x%012llx-0x%012llx : \"%s\"\n", (unsigned long long)slave->offset,
 		(unsigned long long)(slave->offset + slave->mtd.size), slave->mtd.name);
 
 	/* let's do some sanity checks */
@@ -683,7 +689,9 @@ int add_mtd_partitions(struct mtd_info *master,
 	if (mtd_partitions.next == NULL)
 		INIT_LIST_HEAD(&mtd_partitions);
 #endif
-	printk("Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
+
+	debug("Creating %d MTD partitions on \"%s\":\n", nbparts, master->name);
+
 	for (i = 0; i < nbparts; i++) {
 		slave = allocate_partition(master, parts + i, i, cur_offset);
 		if (IS_ERR(slave))
@@ -823,52 +831,4 @@ uint64_t mtd_get_device_size(const struct mtd_info *mtd)
 
 	return PART(mtd)->master->size;
 }
-
-unsigned int get_mtd_size(char *name)
-{
-	struct mtd_part *slave, *next;
-	list_for_each_entry_safe(slave, next, &mtd_partitions, list) {
-		if (!strcmp(slave->mtd.name, name)) {
-			return slave->mtd.size;
-		}
-	}
-	return 0;
-}
 EXPORT_SYMBOL_GPL(mtd_get_device_size);
-#ifdef CONFIFG_AML_MTDPART
-extern struct part_info *amlmtd_part;
-extern int amlmtd_part_cnt;
-/* construct a partition list */
-int mtdparts_init(void)
-{
-	struct mtd_part *mtdpart;
-	int i;
-
-	if (NULL != amlmtd_part) {
-		printf("%s() %d, already init\n", __func__, __LINE__);
-		return 0;
-	}
-
-	list_for_each_entry(mtdpart, &mtd_partitions, list) {
-		amlmtd_part_cnt++;
-	}
-	amlmtd_part = (struct part_info *)malloc(
-		amlmtd_part_cnt * sizeof(struct part_info));
-	i = amlmtd_part_cnt - 1;
-	list_for_each_entry(mtdpart, &mtd_partitions, list) {
-		amlmtd_part[i].name = mtdpart->mtd.name;
-		amlmtd_part[i].offset = mtdpart->offset;
-		amlmtd_part[i].size = mtdpart->mtd.size;
-		// amlmtd_part[i].dev =
-		i--;
-	}
-#if 1
-	for (i = 0; i < amlmtd_part_cnt; i++)
-		printf("0x%012llx-0x%012llx : \"%s\"\n",
-			(unsigned long long)amlmtd_part[i].offset,
-			(unsigned long long)(amlmtd_part[i].offset + amlmtd_part[i].size),
-			amlmtd_part[i].name);
-#endif
-	return 0;
-}
-#endif
