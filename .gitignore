@@ -7,7 +7,6 @@
 #
 .*
 *.a
-*.bin
 *.cfgtmp
 *.dtb
 *.dtb.S
