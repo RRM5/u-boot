@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-2.0+
 
 VERSION = 2018
-PATCHLEVEL = 07
+PATCHLEVEL = 11
 SUBLEVEL =
-EXTRAVERSION = -rc2
+EXTRAVERSION = -rc3
 NAME =
 
 # *DOCUMENTATION*
@@ -372,8 +372,12 @@ KBUILD_CPPFLAGS := -D__KERNEL__ -D__UBOOT__
 KBUILD_CFLAGS   := -Wall -Wstrict-prototypes \
 		   -Wno-format-security \
 		   -fno-builtin -ffreestanding $(CSTD_FLAG)
-KBUILD_CFLAGS	+= -fshort-wchar
+KBUILD_CFLAGS	+= -fshort-wchar -fno-strict-aliasing
 KBUILD_AFLAGS   := -D__ASSEMBLY__
+
+# Don't generate position independent code
+KBUILD_CFLAGS	+= $(call cc-option,-fno-PIE)
+KBUILD_AFLAGS	+= $(call cc-option,-fno-PIE)
 
 # Read UBOOTRELEASE from include/config/uboot.release (if it exists)
 UBOOTRELEASE = $(shell cat include/config/uboot.release 2> /dev/null)
@@ -685,7 +689,7 @@ libs-y += drivers/dma/
 libs-y += drivers/gpio/
 libs-y += drivers/i2c/
 libs-y += drivers/mtd/
-libs-$(CONFIG_CMD_NAND) += drivers/mtd/nand/
+libs-$(CONFIG_CMD_NAND) += drivers/mtd/nand/raw/
 libs-y += drivers/mtd/onenand/
 libs-$(CONFIG_CMD_UBI) += drivers/mtd/ubi/
 libs-y += drivers/mtd/spi/
@@ -857,6 +861,10 @@ ifneq ($(CONFIG_SYS_INIT_SP_BSS_OFFSET),)
 ALL-y += init_sp_bss_offset_check
 endif
 
+ifeq ($(CONFIG_MPC85xx)$(CONFIG_OF_SEPARATE),yy)
+ALL-y += u-boot-with-dtb.bin
+endif
+
 LDFLAGS_u-boot += $(LDFLAGS_FINAL)
 
 # Avoid 'Not enough room for program headers' error on binutils 2.28 onwards.
@@ -979,7 +987,13 @@ spl/u-boot-spl.srec: spl/u-boot-spl FORCE
 	$(call if_changed,objcopy)
 
 OBJCOPYFLAGS_u-boot-nodtb.bin := -O binary \
-		$(if $(CONFIG_X86_16BIT_INIT),-R .start16 -R .resetvec)
+		$(if $(CONFIG_X86_16BIT_INIT),-R .start16 -R .resetvec) \
+		$(if $(CONFIG_MPC85XX_HAVE_RESET_VECTOR),-R .bootpg -R .resetvec)
+
+OBJCOPYFLAGS_u-boot-spl.hex = $(OBJCOPYFLAGS_u-boot.hex)
+
+spl/u-boot-spl.hex: spl/u-boot-spl FORCE
+	$(call if_changed,objcopy)
 
 binary_size_check: u-boot-nodtb.bin FORCE
 	@file_size=$(shell wc -c u-boot-nodtb.bin | awk '{print $$1}') ; \
@@ -1053,11 +1067,6 @@ ifndef CONFIG_SYS_UBOOT_START
 CONFIG_SYS_UBOOT_START := 0
 endif
 
-# Create a file containing the configuration options the image was built with
-quiet_cmd_cpp_cfg = CFG     $@
-cmd_cpp_cfg = $(CPP) -Wp,-MD,$(depfile) $(cpp_flags) $(LDPPFLAGS) -ansi \
-	-DDO_DEPS_ONLY -D__ASSEMBLY__ -x assembler-with-cpp -P -dM -E -o $@ $<
-
 # Boards with more complex image requirments can provide an .its source file
 # or a generator script
 ifneq ($(CONFIG_SPL_FIT_SOURCE),"")
@@ -1065,7 +1074,10 @@ U_BOOT_ITS = $(subst ",,$(CONFIG_SPL_FIT_SOURCE))
 else
 ifneq ($(CONFIG_SPL_FIT_GENERATOR),"")
 U_BOOT_ITS := u-boot.its
-$(U_BOOT_ITS): FORCE
+ifeq ($(CONFIG_SPL_FIT_GENERATOR),"arch/arm/mach-rockchip/make_fit_atf.py")
+U_BOOT_ITS_DEPS += u-boot
+endif
+$(U_BOOT_ITS): $(U_BOOT_ITS_DEPS) FORCE
 	$(srctree)/$(CONFIG_SPL_FIT_GENERATOR) \
 	$(patsubst %,arch/$(ARCH)/dts/%.dtb,$(subst ",,$(CONFIG_OF_LIST))) > $@
 endif
@@ -1116,8 +1128,8 @@ u-boot.sha1:	u-boot.bin
 u-boot.dis:	u-boot
 		$(OBJDUMP) -d $< > $@
 
-ifdef CONFIG_TPL
-SPL_PAYLOAD := tpl/u-boot-with-tpl.bin
+ifneq ($(CONFIG_SPL_PAYLOAD),)
+SPL_PAYLOAD := $(CONFIG_SPL_PAYLOAD:"%"=%)
 else
 SPL_PAYLOAD := u-boot.bin
 endif
@@ -1127,6 +1139,7 @@ OBJCOPYFLAGS_u-boot-with-spl.bin = -I binary -O binary \
 u-boot-with-spl.bin: spl/u-boot-spl.bin $(SPL_PAYLOAD) FORCE
 	$(call if_changed,pad_cat)
 
+ifeq ($(CONFIG_ARCH_LPC32XX)$(CONFIG_SPL),yy)
 MKIMAGEFLAGS_lpc32xx-spl.img = -T lpc32xximage -a $(CONFIG_SPL_TEXT_BASE)
 
 lpc32xx-spl.img: spl/u-boot-spl.bin FORCE
@@ -1146,6 +1159,7 @@ lpc32xx-full.bin: lpc32xx-boot-0.bin lpc32xx-boot-1.bin u-boot.img FORCE
 	$(call if_changed,cat)
 
 CLEAN_FILES += lpc32xx-*
+endif
 
 OBJCOPYFLAGS_u-boot-with-tpl.bin = -I binary -O binary \
 				   --pad-to=$(CONFIG_TPL_PAD_TO)
@@ -1203,6 +1217,18 @@ u-boot-with-spl.sfp: spl/u-boot-spl.sfp u-boot.img FORCE
 	$(call if_changed,socboot)
 endif
 
+ifeq ($(CONFIG_MPC85xx)$(CONFIG_OF_SEPARATE),yy)
+u-boot-with-dtb.bin: u-boot.bin u-boot.dtb \
+	$(if $(CONFIG_MPC85XX_HAVE_RESET_VECTOR), u-boot-br.bin) FORCE
+	$(call if_changed,binman)
+
+ifeq ($(CONFIG_MPC85XX_HAVE_RESET_VECTOR),y)
+OBJCOPYFLAGS_u-boot-br.bin := -O binary -j .bootpg -j .resetvec
+u-boot-br.bin: u-boot FORCE
+	$(call if_changed,objcopy)
+endif
+endif
+
 # x86 uses a large ROM. We fill it with 0xff, put the 16-bit stuff (including
 # reset vector) at the top, Intel ME descriptor at the bottom, and U-Boot in
 # the middle. This is handled by binman based on an image description in the
@@ -1239,8 +1265,9 @@ endif
 
 ifneq ($(CONFIG_TEGRA),)
 ifneq ($(CONFIG_BINMAN),)
-u-boot-dtb-tegra.bin u-boot-tegra.bin u-boot-nodtb-tegra.bin: \
-		spl/u-boot-spl u-boot.bin FORCE
+# Makes u-boot-dtb-tegra.bin u-boot-tegra.bin u-boot-nodtb-tegra.bin
+%-dtb-tegra.bin %-tegra.bin %-nodtb-tegra.bin: \
+		spl/%-spl %.bin FORCE
 	$(call if_changed,binman)
 else
 OBJCOPYFLAGS_u-boot-nodtb-tegra.bin = -O binary --pad-to=$(CONFIG_SYS_TEXT_BASE)
@@ -1296,7 +1323,11 @@ spl/u-boot-spl.pbl: spl/u-boot-spl.bin FORCE
 ifeq ($(ARCH),arm)
 UBOOT_BINLOAD := u-boot.img
 else
+ifeq ($(CONFIG_MPC85xx)$(CONFIG_OF_SEPARATE),yy)
+UBOOT_BINLOAD := u-boot-with-dtb.bin
+else
 UBOOT_BINLOAD := u-boot.bin
+endif
 endif
 
 OBJCOPYFLAGS_u-boot-with-spl-pbl.bin = -I binary -O binary --pad-to=$(CONFIG_SPL_PAD_TO) \
@@ -1495,7 +1526,7 @@ $(defaultenv_h): $(CONFIG_DEFAULT_ENV_FILE:"%"=%) FORCE
 # ---------------------------------------------------------------------------
 quiet_cmd_cpp_lds = LDS     $@
 cmd_cpp_lds = $(CPP) -Wp,-MD,$(depfile) $(cpp_flags) $(LDPPFLAGS) \
-		-D__ASSEMBLY__ -x assembler-with-cpp -P -o $@ $<
+		-D__ASSEMBLY__ -x assembler-with-cpp -std=c99 -P -o $@ $<
 
 u-boot.lds: $(LDSCRIPT) prepare FORCE
 	$(call if_changed_dep,cpp_lds)
@@ -1608,19 +1639,18 @@ clean: rm-files := $(CLEAN_FILES)
 
 clean-dirs	:= $(foreach f,$(u-boot-alldirs),$(if $(wildcard $(srctree)/$f/Makefile),$f))
 
-clean-dirs      := $(addprefix _clean_, $(clean-dirs) doc/DocBook)
+clean-dirs      := $(addprefix _clean_, $(clean-dirs))
 
 PHONY += $(clean-dirs) clean archclean
 $(clean-dirs):
 	$(Q)$(MAKE) $(clean)=$(patsubst _clean_%,%,$@)
 
-# TODO: Do not use *.cfgtmp
 clean: $(clean-dirs)
 	$(call cmd,rmdirs)
 	$(call cmd,rmfiles)
 	@find $(if $(KBUILD_EXTMOD), $(KBUILD_EXTMOD), .) $(RCS_FIND_IGNORE) \
 		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
-		-o -name '*.ko.*' -o -name '*.su' -o -name '*.cfgtmp' \
+		-o -name '*.ko.*' -o -name '*.su' \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \
 		-o -name '*.lex.c' -o -name '*.tab.[ch]' \
 		-o -name '*.symtypes' -o -name 'modules.order' \
@@ -1670,6 +1700,10 @@ help:
 	@echo  'Configuration targets:'
 	@$(MAKE) -f $(srctree)/scripts/kconfig/Makefile help
 	@echo  ''
+	@echo  'Test targets:'
+	@echo  ''
+	@echo  '  check           - Run all automated tests that use sandbox'
+	@echo  ''
 	@echo  'Other generic targets:'
 	@echo  '  all		  - Build all necessary images depending on configuration'
 	@echo  '  tests		  - Build U-Boot for sandbox and run tests'
@@ -1691,7 +1725,7 @@ help:
 	@echo  '  coccicheck      - Execute static code analysis with Coccinelle'
 	@echo  ''
 	@echo  'Documentation targets:'
-	@$(MAKE) -f $(srctree)/doc/DocBook/Makefile dochelp
+	@$(MAKE) -f $(srctree)/Documentation/Makefile dochelp
 	@echo  ''
 	@echo  '  make V=0|1 [targets] 0 => quiet build (default), 1 => verbose build'
 	@echo  '  make V=2   [targets] 2 => give reason for rebuild of target'
@@ -1708,14 +1742,16 @@ help:
 	@echo  'Execute "make" or "make all" to build all targets marked with [*] '
 	@echo  'For further info see the ./README file'
 
-tests:
+tests check:
 	$(srctree)/test/run
 
 # Documentation targets
 # ---------------------------------------------------------------------------
-%docs: scripts_basic FORCE
-	$(Q)$(MAKE) $(build)=scripts build_docproc
-	$(Q)$(MAKE) $(build)=doc/DocBook $@
+DOC_TARGETS := xmldocs latexdocs pdfdocs htmldocs epubdocs cleandocs \
+	       linkcheckdocs dochelp refcheckdocs
+PHONY += $(DOC_TARGETS)
+$(DOC_TARGETS): scripts_basic FORCE
+	$(Q)$(MAKE) $(build)=Documentation $@
 
 endif #ifeq ($(config-targets),1)
 endif #ifeq ($(mixed-targets),1)

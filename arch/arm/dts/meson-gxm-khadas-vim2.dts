@@ -20,7 +20,6 @@
 		serial0 = &uart_AO;
 		serial1 = &uart_A;
 		serial2 = &uart_AO_B;
-		spi0 = &spifc;
 	};
 
 	chosen {
@@ -346,7 +345,7 @@
 /* eMMC */
 &sd_emmc_c {
 	status = "okay";
-	pinctrl-0 = <&emmc_pins>;
+	pinctrl-0 = <&emmc_pins>, <&emmc_ds_pins>;
 	pinctrl-names = "default";
 
 	bus-width = <8>;
@@ -369,7 +368,7 @@
  * Remove emmc_ds_pins from sd_emmc_c pinctrl-0 then spifc can be enabled
  */
 &spifc {
-	status = "okay";
+	status = "disabled";
 	pinctrl-0 = <&nor_pins>;
 	pinctrl-names = "default";
 
@@ -410,11 +409,4 @@
 
 &usb0 {
 	status = "okay";
-};
-
-&usb2_phy0 {
-        /*
-         * HDMI_5V is also used as supply for the USB VBUS.
-         */
-        phy-supply = <&hdmi_5v>;
 };

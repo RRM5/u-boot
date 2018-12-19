@@ -281,7 +281,16 @@ int board_early_init_f(void)
 {
 	int ret = 0;
 #if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_CLK_ZYNQMP)
-	zynqmp_pmufw_version();
+	u32 pm_api_version;
+
+	pm_api_version = zynqmp_pmufw_version();
+	printf("PMUFW:\tv%d.%d\n",
+	       pm_api_version >> ZYNQMP_PM_VERSION_MAJOR_SHIFT,
+	       pm_api_version & ZYNQMP_PM_VERSION_MINOR_MASK);
+
+	if (pm_api_version < ZYNQMP_PM_VERSION)
+		panic("PMUFW version error. Expected: v%d.%d\n",
+		      ZYNQMP_PM_VERSION_MAJOR, ZYNQMP_PM_VERSION_MINOR);
 #endif
 
 #if defined(CONFIG_ZYNQMP_PSU_INIT_ENABLED)
@@ -312,12 +321,16 @@ int board_init(void)
 #endif
 
 #if !defined(CONFIG_SPL_BUILD) && defined(CONFIG_WDT)
-	if (uclass_get_device(UCLASS_WDT, 0, &watchdog_dev)) {
-		puts("Watchdog: Not found!\n");
-	} else {
-		wdt_start(watchdog_dev, 0, 0);
-		puts("Watchdog: Started\n");
+	if (uclass_get_device_by_seq(UCLASS_WDT, 0, &watchdog_dev)) {
+		debug("Watchdog: Not found by seq!\n");
+		if (uclass_get_device(UCLASS_WDT, 0, &watchdog_dev)) {
+			puts("Watchdog: Not found!\n");
+			return 0;
+		}
 	}
+
+	wdt_start(watchdog_dev, 0, 0);
+	puts("Watchdog: Started\n");
 #endif
 
 	return 0;
@@ -419,7 +432,7 @@ int dram_init_banksize(void)
 
 int dram_init(void)
 {
-	if (fdtdec_setup_memory_size() != 0)
+	if (fdtdec_setup_mem_size_base() != 0)
 		return -EINVAL;
 
 	return 0;

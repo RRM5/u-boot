@@ -34,14 +34,6 @@ DECLARE_GLOBAL_DATA_PTR;
 # error Marvell mvneta requires PHYLIB
 #endif
 
-/* Some linux -> U-Boot compatibility stuff */
-#define netdev_err(dev, fmt, args...)		\
-	printf(fmt, ##args)
-#define netdev_warn(dev, fmt, args...)		\
-	printf(fmt, ##args)
-#define netdev_info(dev, fmt, args...)		\
-	printf(fmt, ##args)
-
 #define CONFIG_NR_CPUS		1
 #define ETH_HLEN		14	/* Total octets in header */
 
@@ -1702,11 +1694,13 @@ static int mvneta_probe(struct udevice *dev)
 
 		/* Align buffer area for descs and rx_buffers to 1MiB */
 		bd_space = memalign(1 << MMU_SECTION_SHIFT, BD_SPACE);
+		flush_dcache_range((ulong)bd_space, (ulong)bd_space + BD_SPACE);
 		mmu_set_region_dcache_behaviour((phys_addr_t)bd_space, BD_SPACE,
 						DCACHE_OFF);
 		buffer_loc.tx_descs = (struct mvneta_tx_desc *)bd_space;
 		size = roundup(MVNETA_MAX_TXD * sizeof(struct mvneta_tx_desc),
 				ARCH_DMA_MINALIGN);
+		memset(buffer_loc.tx_descs, 0, size);
 		buffer_loc.rx_descs = (struct mvneta_rx_desc *)
 			((phys_addr_t)bd_space + size);
 		size += roundup(MVNETA_MAX_RXD * sizeof(struct mvneta_rx_desc),

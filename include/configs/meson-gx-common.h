@@ -9,7 +9,6 @@
 
 #define CONFIG_CPU_ARMV8
 #define CONFIG_REMAKE_ELF
-#define CONFIG_NR_DRAM_BANKS		1
 #define CONFIG_ENV_SIZE			0x2000
 #define CONFIG_SYS_MAXARGS		32
 #define CONFIG_SYS_MALLOC_LEN		(32 << 20)
@@ -30,10 +29,10 @@
 #endif
 
 #define BOOT_TARGET_DEVICES(func) \
-	BOOT_TARGET_DEVICES_USB(func) \
 	func(MMC, mmc, 0) \
 	func(MMC, mmc, 1) \
 	func(MMC, mmc, 2) \
+	BOOT_TARGET_DEVICES_USB(func) \
 	func(PXE, pxe, na) \
 	func(DHCP, dhcp, na)
 

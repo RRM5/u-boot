@@ -97,7 +97,7 @@ static int spi_flash_std_read(struct udevice *dev, u32 offset, size_t len,
 {
 	struct spi_flash *flash = dev_get_uclass_priv(dev);
 
-	return spi_flash_cmd_read_ops(flash, offset, len, buf);
+	return log_ret(spi_flash_cmd_read_ops(flash, offset, len, buf));
 }
 
 static int spi_flash_std_write(struct udevice *dev, u32 offset, size_t len,
@@ -145,7 +145,6 @@ static const struct dm_spi_flash_ops spi_flash_std_ops = {
 
 static const struct udevice_id spi_flash_std_ids[] = {
 	{ .compatible = "spi-flash" },
-	{ .compatible = "jedec,spi-nor" },
 	{ }
 };
 
